@@ -1,6 +1,5 @@
 spring:
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
     show-sql: true
@@ -11,4 +10,4 @@ spring:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://localhost:5432/tplhk_gis?currentSchema=gis
     username: postgres
-    password: admin
+    password: Tplsz123

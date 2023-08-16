@@ -5,10 +5,14 @@ import com.cntaiping.domain.repository.PolicyCommentRepository;
 import com.cntaiping.domain.repository.PolicyDateRepository;
 import com.cntaiping.domain.repository.PolicyImageRepository;
 import com.cntaiping.domain.repository.PolicyRepository;
+import com.cntaiping.domain.vo.PolicyAllView;
 import com.cntaiping.domain.vo.PolicyBo;
+import com.cntaiping.domain.vo.QPolicyAllView;
 import com.cntaiping.domain.vo.QPolicyBo;
 import com.github.javafaker.Faker;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.StringTemplate;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,7 +98,9 @@ public class PolicyService {
         int randomIndex = faker.random().nextInt(policyStatuses.length);
         return policyStatuses[randomIndex];
     }
-    //演示简单查询 querying
+
+
+    //1 演示简单查询 querying
     public List<PolicyEntity> singleQuery01(String policy, BigDecimal amount){
         QPolicyEntity qPolicyEntity = QPolicyEntity.policyEntity;
         return  jpaQueryFactory.selectFrom(qPolicyEntity)
@@ -103,7 +109,35 @@ public class PolicyService {
                 .fetch();
     }
 
-    //演示连表查询 using joins -- Projections.constructor
+    //2 演示多数据源查询
+    public List<PolicyAllView> multipleSourceQuery01(){
+        QPolicyEntity qPolicyEntity = QPolicyEntity.policyEntity;
+        QPolicyDateInfo qPolicyDateInfo = QPolicyDateInfo.policyDateInfo;
+
+        return jpaQueryFactory.select(
+                    new QPolicyAllView(
+                            qPolicyEntity.id,
+                            qPolicyEntity.policyNo,
+                            qPolicyEntity.policyStatus,
+                            qPolicyEntity.policyCurrency,
+                            qPolicyEntity.policyPremium,
+                            qPolicyEntity.policyAmount,
+                            qPolicyEntity.effective,
+                            qPolicyEntity.deleted,
+                            qPolicyDateInfo.applicationDate,
+                            qPolicyDateInfo.policyEffectDate,
+                            qPolicyDateInfo.ensureEffectDate,
+                            qPolicyDateInfo.ensureExpireDate,
+                            qPolicyDateInfo.policyAdoptionDate
+                    )
+                )
+                .from(qPolicyEntity,qPolicyDateInfo)
+                .where(qPolicyEntity.id.eq(qPolicyDateInfo.policyId))
+                .orderBy(qPolicyDateInfo.applicationDate.asc())
+                .fetch();
+    }
+
+    //3 演示连表查询 using joins -- Projections.constructor
     public List<PolicyBo> projectionsQueryByConstructor(){
         QPolicyEntity qPolicyEntity = QPolicyEntity.policyEntity;
         QPolicyDateInfo qPolicyDateInfo = QPolicyDateInfo.policyDateInfo;
@@ -128,7 +162,7 @@ public class PolicyService {
 
     }
 
-    //演示子查询与分组查询 --JPAExpressions /GroupBy
+    //3 演示子查询与分组查询 --JPAExpressions /GroupBy
     public List<PolicyEntity> findGreaterThanAvgPremium(){
         QPolicyEntity qPolicyEntity = QPolicyEntity.policyEntity;
 
@@ -138,5 +172,6 @@ public class PolicyService {
                         .gt(JPAExpressions.select(qPolicyEntity.policyPremium.avg()).from(qPolicyEntity))
                 ).fetch();
     }
+
 
 }
